@@ -1,0 +1,46 @@
+{
+	"name": "discord.js-games",
+	"version": "1.0.0",
+	"description": "A Discord.js v13 module for minigames",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"format": "prettier --write \"src/**/*.ts\"",
+		"lint": "eslint . --ext .ts",
+		"prepublishOnly": "npm run format && npm run lint && npm run build"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CarelessInternet/discord.js-games.git"
+	},
+	"keywords": [
+		"discord.js",
+		"games",
+		"minigames",
+		"nodejs",
+		"fun"
+	],
+	"author": "CarelessInternet",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/CarelessInternet/discord.js-games/issues"
+	},
+	"homepage": "https://github.com/CarelessInternet/discord.js-games#readme",
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^5.2.0",
+		"@typescript-eslint/parser": "^5.2.0",
+		"eslint": "^8.1.0",
+		"prettier": "^2.4.1",
+		"typescript": "^4.4.4"
+	},
+	"dependencies": {
+    "discord.js": "^13.2.0"
+	},
+  "engines": {
+    "node": ">=16.6.0"
+  },
+  "files": [
+    "./dist/**/*"
+  ]
+}
