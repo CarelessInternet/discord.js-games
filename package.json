@@ -2,8 +2,8 @@
 	"name": "discord.js-games",
 	"version": "1.0.0",
 	"description": "A Discord.js v13 module for minigames",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"main": "./dist/src/index.js",
+	"types": "./dist/src/index.d.ts",
 	"scripts": {
 		"test": "node ./dist/discord-testing/index.js",
 		"deploy": "node ./dist/discord-testing/deploy.js",
@@ -48,8 +48,5 @@
 	"engines": {
 		"node": ">=16.6.0"
 	},
-	"files": [
-		"./dist/src/**/*",
-		"./dist/package.json"
-	]
+	"files": ["./dist/src/**/*"]
 }
