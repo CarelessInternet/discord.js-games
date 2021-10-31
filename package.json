@@ -5,8 +5,9 @@
 	"main": "./dist/src/index.js",
 	"types": "./dist/src/index.d.ts",
 	"scripts": {
-		"test": "node ./dist/discord-testing/index.js",
+		"start": "node ./dist/discord-testing/index.js",
 		"deploy": "node ./dist/discord-testing/deploy.js",
+		"test": "node ./dist/discord-testing/test.js",
 		"build": "tsc",
 		"format": "prettier --write \"src/**/*.ts\"",
 		"lint": "eslint . --ext .ts",
@@ -43,7 +44,7 @@
 	},
 	"dependencies": {
 		"@discordjs/builders": "^0.7.0",
-		"discord.js": "^13.2.0"
+		"discord.js": "^13.3.0"
 	},
 	"engines": {
 		"node": ">=16.6.0"
