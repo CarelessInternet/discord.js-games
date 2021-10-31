@@ -1,18 +1,320 @@
 import {
-	CollectorFilter,
+	ButtonInteraction,
 	CommandInteraction,
 	GuildMember,
 	Message,
 	MessageActionRow,
 	MessageButton,
-	MessageComponentInteraction,
 	MessageEmbed,
 	NewsChannel,
 	TextChannel,
 	ThreadChannel
 } from 'discord.js';
 import { inlineCode, memberNicknameMention } from '@discordjs/builders';
-import { Buttons } from './../interfaces/buttons';
+import { Buttons, RPSReacted } from './../interfaces';
+
+const buttons: Buttons[] = [
+	{
+		id: 'Rock',
+		label: '🗿',
+		style: 'PRIMARY'
+	},
+	{
+		id: 'Paper',
+		label: '📄',
+		style: 'SUCCESS'
+	},
+	{
+		id: 'Scissors',
+		label: '✂️',
+		style: 'DANGER'
+	}
+];
+
+const row = new MessageActionRow();
+buttons.forEach((val) => {
+	row.addComponents(
+		new MessageButton()
+			.setCustomId(val.id)
+			.setLabel(val.label)
+			.setStyle(val.style)
+	);
+});
+
+const interactionFilter = (i: ButtonInteraction, players: string[]) =>
+	buttons.some((item) => item.id === i.customId) &&
+	players.some((id) => id === i.user.id);
+
+/**
+ * Play a game of rock paper scissors
+ * @param {object} options - Important variables to handle the game
+ * @param {Message | CommandInteraction} options.message - The message or interaction from the user
+ * @param {GuildMember} [options.opponent] - The opponent the user want to challenge
+ * @param {string} [options.embedTitle] - The title of the embed, default is 'Rock Paper Scissors'
+ * @returns {Promise<void>} Returns nothing, throws an error if you have messed something up
+ * @author CarelessInternet
+ */
+export async function rps({
+	message,
+	opponent,
+	embedTitle = 'Rock Paper Scissors'
+}: {
+	message: Message | CommandInteraction;
+	opponent?: GuildMember;
+	embedTitle?: string;
+}): Promise<void> {
+	const tag =
+		message instanceof Message ? message.author.tag : message.user.tag;
+	const avatar =
+		message instanceof Message
+			? message.author.displayAvatarURL({ dynamic: true })
+			: message.user.displayAvatarURL({ dynamic: true });
+
+	const gameEmbed = new MessageEmbed()
+		.setColor('RANDOM')
+		.setAuthor(tag, avatar)
+		.setTitle(embedTitle)
+		.setDescription('Click on the buttons to play')
+		.setTimestamp();
+
+	const channel = message.channel;
+
+	// usually a channel is always included, if it isn't, it's most likely due to missing partials like in dm channels
+	if (!channel) {
+		throw new TypeError(
+			'Missing a channel, did you forget to include partials?'
+		);
+	}
+
+	// if it's not a dm channel, check for sufficient permissions
+	if (
+		channel instanceof TextChannel ||
+		channel instanceof NewsChannel ||
+		channel instanceof ThreadChannel
+	) {
+		const perms = channel.permissionsFor(message.guild?.me ?? '');
+
+		if (!perms?.has('ADD_REACTIONS')) {
+			const embed = new MessageEmbed()
+				.setColor('DARK_RED')
+				.setAuthor(tag, avatar)
+				.setTitle('Missing Permissions')
+				.setDescription(
+					`❌ I am missing the ${inlineCode(
+						'Add Reactions'
+					)} permission, please give it to me before using this command`
+				)
+				.setTimestamp();
+
+			message.reply({ embeds: [embed] });
+			return;
+		}
+		if (!perms?.has('SEND_MESSAGES')) {
+			return;
+		}
+	}
+
+	if (message instanceof CommandInteraction) {
+		if (message.deferred || message.replied) {
+			throw new Error(
+				"Message has already been replied or deferred to, please make sure it's not replied or deferred"
+			);
+		}
+
+		if (opponent) {
+			const opponentId = opponent.id;
+			gameEmbed.addField('Opponent', memberNicknameMention(opponentId), true);
+
+			const msg = await message.reply({
+				embeds: [gameEmbed],
+				components: [row],
+				fetchReply: true
+			});
+
+			try {
+				if (msg instanceof Message) {
+					const collector = msg.createMessageComponentCollector({
+						filter: (i) => interactionFilter(i, [message.user.id, opponentId]),
+						componentType: 'BUTTON',
+						maxUsers: 2,
+						time: 15 * 1000
+					});
+					const reacted: RPSReacted[] = [];
+
+					collector.on('collect', (i: ButtonInteraction) => {
+						if (!reacted.some((item) => item.userId === i.user.id)) {
+							reacted.push({ userId: i.user.id, customId: i.customId });
+
+							// max length is 2, which means that all players have reacted, that's why it is 2 and not some other number
+							if (reacted.length !== 2) {
+								gameEmbed.setDescription(
+									`Waiting for ${memberNicknameMention(
+										opponentId === i.user.id ? message.user.id : opponentId
+									)}...`
+								);
+
+								i.update({ embeds: [gameEmbed] });
+							}
+						}
+
+						if (reacted.length === 2) {
+							const embed = getOpponentWinner(
+								reacted[0],
+								reacted[1],
+								gameEmbed
+							);
+
+							i.update({ embeds: [embed], components: [] });
+						}
+					});
+					collector.on('end', (collected, reason) => {
+						collectorEnd(reason, msg);
+					});
+				} else {
+					throw new TypeError(
+						'Got an APIMessage instead of a Message instance'
+					);
+				}
+			} catch (err: unknown) {
+				message.followUp({
+					content: `An error occured whilst playing rock paper scissors, please try again later\nError: ${err}`,
+					ephemeral: true
+				});
+			}
+		} else {
+			const msg = await message.reply({
+				embeds: [gameEmbed],
+				components: [row],
+				fetchReply: true
+			});
+
+			try {
+				if (msg instanceof Message) {
+					const collector = msg.createMessageComponentCollector({
+						filter: (i) => interactionFilter(i, [message.user.id]),
+						componentType: 'BUTTON',
+						maxUsers: 1,
+						time: 15 * 1000
+					});
+
+					collector.on('collect', (i: ButtonInteraction) => {
+						const reaction = i.customId;
+						const bot = buttons[Math.floor(Math.random() * buttons.length)];
+						const embed = getBotWinner(reaction, bot, gameEmbed);
+
+						i.update({
+							embeds: [embed],
+							components: []
+						});
+					});
+					collector.on('end', (collected, reason) => {
+						collectorEnd(reason, msg);
+					});
+				} else {
+					throw new TypeError(
+						'Got an APIMessage instead of a Message instance'
+					);
+				}
+			} catch (err: unknown) {
+				message.followUp({
+					content: `An error occured whilst playing rock paper scissors, please try again later\n Error: ${err}`,
+					ephemeral: true
+				});
+			}
+		}
+	} else if (message instanceof Message) {
+		if (opponent) {
+			const opponentId = opponent.id;
+			gameEmbed.addField('Opponent', memberNicknameMention(opponentId), true);
+
+			const msg = await message.reply({
+				embeds: [gameEmbed],
+				components: [row]
+			});
+
+			try {
+				const collector = msg.createMessageComponentCollector({
+					filter: (i) => interactionFilter(i, [message.author.id, opponentId]),
+					componentType: 'BUTTON',
+					maxUsers: 2,
+					time: 15 * 1000
+				});
+				const reacted: RPSReacted[] = [];
+
+				collector.on('collect', (i: ButtonInteraction) => {
+					if (!reacted.some((item) => item.userId === i.user.id)) {
+						reacted.push({ userId: i.user.id, customId: i.customId });
+
+						if (reacted.length !== 2) {
+							gameEmbed.setDescription(
+								`Waiting for ${memberNicknameMention(
+									opponentId === i.user.id ? message.author.id : opponentId
+								)}...`
+							);
+
+							i.update({ embeds: [gameEmbed] });
+						}
+					}
+
+					if (reacted.length === 2) {
+						const embed = getOpponentWinner(reacted[0], reacted[1], gameEmbed);
+
+						i.update({ embeds: [embed], components: [] });
+					}
+				});
+				collector.on('end', (collected, reason) => {
+					collectorEnd(reason, msg);
+				});
+			} catch (err: unknown) {
+				message.reply({
+					content: `An error occured whilst playing rock paper scissors, please try again later\nError: ${err}`
+				});
+			}
+		} else {
+			const msg = await message.reply({
+				embeds: [gameEmbed],
+				components: [row]
+			});
+
+			try {
+				if (msg instanceof Message) {
+					const collector = msg.createMessageComponentCollector({
+						filter: (i) => interactionFilter(i, [message.author.id]),
+						componentType: 'BUTTON',
+						maxUsers: 1,
+						time: 15 * 1000
+					});
+
+					collector.on('collect', (i: ButtonInteraction) => {
+						const reaction = i.customId;
+						const bot = buttons[Math.floor(Math.random() * buttons.length)];
+						const embed = getBotWinner(reaction, bot, gameEmbed);
+
+						i.update({
+							embeds: [embed],
+							components: []
+						});
+					});
+					collector.on('end', (collected, reason) => {
+						collectorEnd(reason, msg);
+					});
+				} else {
+					throw new TypeError(
+						'Got an APIMessage instead of a Message instance'
+					);
+				}
+			} catch (err: unknown) {
+				message.reply({
+					content: `An error occured whilst playing rock paper scissors, please try again later\n Error: ${err}`
+				});
+			}
+		}
+	} else {
+		throw new TypeError(
+			'The message must be an instance of CommandInteraction or Message'
+		);
+	}
+}
 
 function outcome(
 	player: string,
@@ -32,192 +334,78 @@ function outcome(
 	}
 }
 
-export async function rps({
-	message,
-	opponent
-}: {
-	message: Message | CommandInteraction;
-	opponent?: GuildMember;
-}) {
-	const buttons: Buttons[] = [
-		{
-			id: 'Rock',
-			emoji: '🗿',
-			style: 'PRIMARY'
-		},
-		{
-			id: 'Paper',
-			emoji: '📄',
-			style: 'SUCCESS'
-		},
-		{
-			id: 'Scissors',
-			emoji: '✂️',
-			style: 'DANGER'
-		}
-	];
+function getBotWinner(
+	reaction: string,
+	bot: Buttons,
+	embed: MessageEmbed
+): MessageEmbed {
+	embed.addField(
+		'Your Choice',
+		buttons.filter((item) => item.id === reaction)[0].label,
+		true
+	);
+	embed.addField("Bot's Choice", bot.label, true);
+	embed.addField('Outcome', outcome(reaction, bot.id, buttons), true);
 
-	const row = new MessageActionRow();
-	buttons.forEach((val) => {
-		row.addComponents(
-			new MessageButton()
-				.setCustomId(val.id)
-				.setLabel(val.emoji)
-				.setStyle(val.style)
+	return embed;
+}
+
+function getOpponentWinner(
+	player1: RPSReacted,
+	player2: RPSReacted,
+	embed: MessageEmbed
+): MessageEmbed {
+	embed.setDescription('View results below!');
+
+	const result = outcome(player1.customId, player2.customId, buttons);
+
+	const choices = [
+		`${memberNicknameMention(player1.userId)} ${
+			buttons.filter((item) => item.id === player1.customId)[0].label
+		}`,
+		`${memberNicknameMention(player2.userId)} ${
+			buttons.filter((item) => item.id === player2.customId)[0].label
+		}`
+	].join('\n');
+	embed.addField('Choices', choices, true);
+
+	if (result === 'Win') {
+		embed.addField(
+			'Outcome',
+			`${memberNicknameMention(player1.userId)} Won`,
+			true
 		);
-	});
-	// const row = new MessageActionRow().addComponents(
-	// 	new MessageButton()
-	// 	.setCustomId(buttons[0].id)
-	// 	.setLabel(buttons[0].emoji)
-	// 	.setStyle(buttons[0].style),
-	// 	new MessageButton()
-	// 	.setCustomId(buttons[1].id)
-	// 	.setLabel(buttons[1].emoji)
-	// 	.setStyle(buttons[1].style),
-	// 	new MessageButton()
-	// 	.setCustomId(buttons[2].id)
-	// 	.setLabel(buttons[2].emoji)
-	// 	.setStyle(buttons[2].style)
-	// );
-
-	if (message instanceof CommandInteraction) {
-		if (message.deferred || message.replied) {
-			throw new Error(
-				"Message has already been replied or deferred to, please make sure it's not replied or deferred"
-			);
-		}
-
-		const channel = message.channel;
-		if (!channel) {
-			throw new TypeError(
-				'Missing a channel, did you forget to include partials?'
-			);
-		}
-		if (
-			channel instanceof TextChannel ||
-			channel instanceof NewsChannel ||
-			channel instanceof ThreadChannel
-		) {
-			const perms = channel.permissionsFor(message.guild?.me ?? '');
-
-			if (!perms?.has('ADD_REACTIONS')) {
-				const embed = new MessageEmbed()
-					.setColor('DARK_RED')
-					.setAuthor(
-						message.user.tag,
-						message.user.displayAvatarURL({ dynamic: true })
-					)
-					.setTitle('Missing Permissions')
-					.setDescription(
-						`❌ I am missing the ${inlineCode(
-							'Add Reactions'
-						)} permission, please give it to me before using this command`
-					)
-					.setTimestamp();
-
-				return message.reply({ embeds: [embed] });
-			}
-			if (!perms?.has('SEND_MESSAGES')) {
-				return;
-			}
-		}
-
-		const gameEmbed = new MessageEmbed()
-			.setColor('RANDOM')
-			.setAuthor(
-				message.user.tag,
-				message.user.displayAvatarURL({ dynamic: true })
-			)
-			.setTitle('Rock Paper Scissors')
-			.setDescription('Click on the buttons to play')
-			.setTimestamp();
-
-		if (opponent) {
-			gameEmbed.addField('Opponent', memberNicknameMention(opponent.id));
-		} else {
-			try {
-				const filter: CollectorFilter<[MessageComponentInteraction]> = (i) =>
-					buttons.some((item) => item.id === i.customId) &&
-					i.user.id === message.user.id;
-				const msg = await message.reply({
-					embeds: [gameEmbed],
-					components: [row],
-					fetchReply: true
-				});
-
-				if (msg instanceof Message) {
-					const collector = msg.createMessageComponentCollector({
-						filter,
-						componentType: 'BUTTON',
-						max: 1,
-						time: 15 * 1000
-					});
-
-					collector.on('collect', (i) => {
-						const reaction = i.customId;
-						const bot = buttons[Math.floor(Math.random() * buttons.length)];
-
-						gameEmbed.addField(
-							'Your Choice',
-							buttons.filter((item) => item.id === reaction)[0].emoji
-						);
-						gameEmbed.addField("Bot's Choice", bot.emoji);
-						gameEmbed.addField('Outcome', outcome(reaction, bot.id, buttons));
-
-						i.update({
-							embeds: [gameEmbed],
-							components: []
-						});
-					});
-					collector.on('end', (collected, reason) => {
-						switch (reason) {
-							case 'time': {
-								msg.edit({
-									content: 'Game aborted due to no response',
-									embeds: [],
-									components: []
-								});
-								break;
-							}
-							case 'messageDelete': {
-								message.channel?.send({
-									content: 'Game aborted because the message was deleted'
-								});
-								break;
-							}
-							case 'channelDelete':
-								break;
-							case 'guildDelete':
-								break;
-							case 'limit':
-								break;
-							default: {
-								break;
-							}
-						}
-					});
-				} else {
-					await message.deleteReply();
-					message.channel.send({
-						content: `${memberNicknameMention(
-							message.user.id
-						)} An internal error occured while playing rock paper scissors, please try again`
-					});
-				}
-			} catch (err) {
-				return message.followUp({
-					content:
-						'An error occured whilst playing rock paper scissors, please try again later',
-					ephemeral: true
-				});
-			}
-		}
-	} else if (message instanceof Message) {
-		//e
+	} else if (result === 'Loss') {
+		embed.addField(
+			'Outcome',
+			`${memberNicknameMention(player2.userId)} Won`,
+			true
+		);
 	} else {
-		throw new TypeError(
-			'The message must be an instance of CommandInteraction or Message'
-		);
+		embed.addField('Outcome', 'Tie', true);
+	}
+
+	return embed;
+}
+
+function collectorEnd(reason: string, msg: Message): void {
+	switch (reason) {
+		case 'time': {
+			msg.edit({
+				content: 'Game aborted due to no response from one or both users',
+				embeds: [],
+				components: []
+			});
+			break;
+		}
+		case 'messageDelete': {
+			msg.channel.send({
+				content: 'Game aborted because the message was deleted'
+			});
+			break;
+		}
+		default: {
+			break;
+		}
 	}
 }

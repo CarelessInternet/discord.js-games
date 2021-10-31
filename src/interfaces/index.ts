@@ -1,1 +1,2 @@
-export { Buttons } from './buttons';
+export { Buttons } from './Buttons';
+export { RPSReacted } from './RPSReacted';
