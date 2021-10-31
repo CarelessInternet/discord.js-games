@@ -1,5 +1,6 @@
 import {
 	ButtonInteraction,
+	ColorResolvable,
 	CommandInteraction,
 	GuildMember,
 	Message,
@@ -57,11 +58,13 @@ const interactionFilter = (i: ButtonInteraction, players: string[]) =>
 export async function rps({
 	message,
 	opponent,
-	embedTitle = 'Rock Paper Scissors'
+	embedTitle = 'Rock Paper Scissors',
+	embedColor = 'RANDOM'
 }: {
 	message: Message | CommandInteraction;
 	opponent?: GuildMember;
 	embedTitle?: string;
+	embedColor?: ColorResolvable;
 }): Promise<void> {
 	const tag =
 		message instanceof Message ? message.author.tag : message.user.tag;
@@ -71,7 +74,7 @@ export async function rps({
 			: message.user.displayAvatarURL({ dynamic: true });
 
 	const gameEmbed = new MessageEmbed()
-		.setColor('RANDOM')
+		.setColor(embedColor)
 		.setAuthor(tag, avatar)
 		.setTitle(embedTitle)
 		.setDescription('Click on the buttons to play')
@@ -110,6 +113,18 @@ export async function rps({
 			return;
 		}
 		if (!perms?.has('SEND_MESSAGES')) {
+			return;
+		}
+	}
+
+	if (opponent) {
+		const id = message instanceof Message ? message.author.id : message.user.id;
+
+		if (opponent.id === id) {
+			message.reply({
+				content: 'You cannot battle against yourself',
+				...(message instanceof CommandInteraction && { ephemeral: true })
+			});
 			return;
 		}
 	}
