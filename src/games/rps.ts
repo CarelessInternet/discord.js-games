@@ -52,6 +52,7 @@ const interactionFilter = (i: ButtonInteraction, players: string[]) =>
  * @param {Message | CommandInteraction} options.message - The message or interaction from the user
  * @param {GuildMember} [options.opponent] - The opponent the user want to challenge
  * @param {string} [options.embedTitle] - The title of the embed, default is 'Rock Paper Scissors'
+ * @param {ColorResolvable} [options.embedColor] - The color of the embed, default is 'RANDOM'
  * @returns {Promise<void>} Returns nothing, throws an error if you have messed something up
  * @author CarelessInternet
  */
