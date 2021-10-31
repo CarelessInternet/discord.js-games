@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { Message, MessageEmbed } from 'discord.js';
+import { CommandInteraction, Message, MessageEmbed } from 'discord.js';
 import { Command } from '../interfaces';
 
 export const category: Command['category'] = 'Utility';
@@ -17,8 +17,12 @@ export const execute: Command['execute'] = async function ({
 	const embed = new MessageEmbed()
 		.setColor('RANDOM')
 		.setAuthor(
-			interaction.user.tag,
-			interaction.user.displayAvatarURL({ dynamic: true })
+			interaction instanceof CommandInteraction
+				? interaction.user.tag
+				: interaction.author.tag,
+			interaction instanceof CommandInteraction
+				? interaction.user.displayAvatarURL({ dynamic: true })
+				: interaction.author.displayAvatarURL({ dynamic: true })
 		)
 		.setTitle('Pinging...')
 		.setTimestamp();
@@ -42,9 +46,15 @@ export const execute: Command['execute'] = async function ({
 		}
 	} catch (err) {
 		console.error(err);
-		interaction.followUp({
-			content: 'An error occured while pinging, please try again later',
-			ephemeral: true
-		});
+
+		const content = 'An error occured while pinging, please try again later';
+		if (interaction instanceof CommandInteraction) {
+			interaction.followUp({
+				content,
+				ephemeral: true
+			});
+		} else {
+			interaction.channel.send({ content });
+		}
 	}
 };

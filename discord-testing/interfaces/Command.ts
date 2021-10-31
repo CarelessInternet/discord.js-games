@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, Message } from 'discord.js';
 import { Client } from './index';
 
 export interface Command {
@@ -9,9 +9,11 @@ export interface Command {
 		cmd
 	}: {
 		client: Client;
-		interaction: CommandInteraction;
+		interaction: Message | CommandInteraction;
 		cmd: string;
 	}) => Promise<void> | void;
-	data: SlashCommandBuilder;
+	data:
+		| Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>
+		| SlashCommandBuilder;
 	category: 'Games' | 'Utility';
 }
