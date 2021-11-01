@@ -1,2 +1,3 @@
-export { rps } from './games/rps';
+export * from './games';
 export * from './interfaces';
+export * from './functions';

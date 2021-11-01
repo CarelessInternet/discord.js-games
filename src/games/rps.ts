@@ -1,6 +1,5 @@
 import {
 	ButtonInteraction,
-	ColorResolvable,
 	CommandInteraction,
 	GuildMember,
 	Message,
@@ -12,7 +11,8 @@ import {
 	ThreadChannel
 } from 'discord.js';
 import { inlineCode, memberNicknameMention } from '@discordjs/builders';
-import { Buttons, RPSReacted } from './../interfaces';
+import { Buttons, GameParameters, RPSReacted } from '../interfaces';
+import { checkForNotReplied, tagAndAvatar } from '../functions';
 
 const buttons: Buttons[] = [
 	{
@@ -48,37 +48,28 @@ const interactionFilter = (i: ButtonInteraction, players: string[]) =>
 
 /**
  * Play a game of rock paper scissors
- * @param {object} options - Important variables to handle the game
- * @param {Message | CommandInteraction} options.message - The message or interaction from the user
+ * @param {GameParameters & object} options - Options for the game
  * @param {GuildMember} [options.opponent] - The opponent the user want to challenge
- * @param {string} [options.embedTitle] - The title of the embed, default is 'Rock Paper Scissors'
- * @param {ColorResolvable} [options.embedColor] - The color of the embed, default is 'RANDOM'
  * @returns {Promise<void>} Returns nothing, throws an error if you have messed something up
  * @author CarelessInternet
  */
 export async function rps({
 	message,
 	opponent,
-	embed
+	embed = {}
 }: {
-	message: Message | CommandInteraction;
 	opponent?: GuildMember;
-	embed?: {
-		title?: string;
-		color?: ColorResolvable;
-	};
-}): Promise<void> {
-	const tag =
-		message instanceof Message ? message.author.tag : message.user.tag;
-	const avatar =
-		message instanceof Message
-			? message.author.displayAvatarURL({ dynamic: true })
-			: message.user.displayAvatarURL({ dynamic: true });
+} & GameParameters): Promise<void> {
+	embed.title ??= 'Rock Paper Scissors';
+	embed.color ??= 'RANDOM';
 
+	checkForNotReplied(message);
+
+	const [tag, avatar] = tagAndAvatar(message);
 	const gameEmbed = new MessageEmbed()
-		.setColor(embed?.color ?? 'RANDOM')
+		.setColor(embed.color)
 		.setAuthor(tag, avatar)
-		.setTitle(embed?.title ?? 'Rock Paper Scissors')
+		.setTitle(embed.title)
 		.setDescription('Click on the buttons to play')
 		.setTimestamp();
 
@@ -132,12 +123,6 @@ export async function rps({
 	}
 
 	if (message instanceof CommandInteraction) {
-		if (message.deferred || message.replied) {
-			throw new Error(
-				"Message has already been replied or deferred to, please make sure it's not replied or deferred"
-			);
-		}
-
 		if (opponent) {
 			const opponentId = opponent.id;
 			gameEmbed.addField('Opponent', memberNicknameMention(opponentId), true);
