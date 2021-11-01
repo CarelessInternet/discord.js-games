@@ -10,10 +10,7 @@ export const data: Command['data'] = new SlashCommandBuilder()
 		'Sends a pong back to test connection between the bot and the server/user'
 	);
 
-export const execute: Command['execute'] = async function ({
-	client,
-	interaction
-}) {
+export const execute: Command['execute'] = async ({ client, interaction }) => {
 	const embed = new MessageEmbed()
 		.setColor('RANDOM')
 		.setAuthor(

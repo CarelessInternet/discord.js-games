@@ -15,7 +15,7 @@ export const data: Command['data'] = new SlashCommandBuilder()
 			.setRequired(false)
 	);
 
-export const execute: Command['execute'] = function ({ interaction }) {
+export const execute: Command['execute'] = ({ interaction }) => {
 	if (interaction instanceof CommandInteraction) {
 		const opponent = interaction.options.getMember('opponent');
 		rps({
