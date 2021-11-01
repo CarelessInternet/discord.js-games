@@ -22,7 +22,10 @@ export const execute: Command['execute'] = function ({ interaction }) {
 			message: interaction,
 			...(opponent instanceof GuildMember && {
 				opponent,
-				embedTitle: 'rps with slash command'
+				embed: {
+					title: 'rps with slash command',
+					color: 'BLURPLE'
+				}
 			})
 		});
 	} else {
@@ -32,8 +35,9 @@ export const execute: Command['execute'] = function ({ interaction }) {
 			message: interaction,
 			...(opponent instanceof GuildMember && {
 				opponent,
-				embedTitle: 'rps with message',
-				embedColor: 'PURPLE'
+				embed: {
+					title: 'rps with message'
+				}
 			})
 		});
 	}

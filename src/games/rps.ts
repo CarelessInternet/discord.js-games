@@ -59,13 +59,14 @@ const interactionFilter = (i: ButtonInteraction, players: string[]) =>
 export async function rps({
 	message,
 	opponent,
-	embedTitle = 'Rock Paper Scissors',
-	embedColor = 'RANDOM'
+	embed
 }: {
 	message: Message | CommandInteraction;
 	opponent?: GuildMember;
-	embedTitle?: string;
-	embedColor?: ColorResolvable;
+	embed?: {
+		title?: string;
+		color?: ColorResolvable;
+	};
 }): Promise<void> {
 	const tag =
 		message instanceof Message ? message.author.tag : message.user.tag;
@@ -75,9 +76,9 @@ export async function rps({
 			: message.user.displayAvatarURL({ dynamic: true });
 
 	const gameEmbed = new MessageEmbed()
-		.setColor(embedColor)
+		.setColor(embed?.color ?? 'RANDOM')
 		.setAuthor(tag, avatar)
-		.setTitle(embedTitle)
+		.setTitle(embed?.title ?? 'Rock Paper Scissors')
 		.setDescription('Click on the buttons to play')
 		.setTimestamp();
 
