@@ -2,7 +2,7 @@ import { readdirSync } from 'fs';
 import { resolve } from 'path';
 import { Client, Command, Handler } from '../interfaces';
 
-export const execute: Handler['execute'] = function (client: Client) {
+export const execute: Handler['execute'] = (client: Client) => {
 	const files = readdirSync(resolve(__dirname, '../commands/')).filter((file) =>
 		file.endsWith('.js')
 	);
