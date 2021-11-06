@@ -5,14 +5,12 @@ import {
 	Message,
 	MessageActionRow,
 	MessageButton,
-	MessageEmbed,
-	NewsChannel,
-	TextChannel,
-	ThreadChannel
+	MessageEmbed
 } from 'discord.js';
-import { inlineCode, memberNicknameMention } from '@discordjs/builders';
+import { memberNicknameMention } from '@discordjs/builders';
 import { Buttons, GameParameters, RPSReacted } from '../interfaces';
 import { checkForNotReplied, tagAndAvatar } from '../functions';
+import { checkForPermissions } from '../functions';
 
 const buttons: Buttons[] = [
 	{
@@ -60,8 +58,8 @@ export async function rps({
 }: {
 	opponent?: GuildMember;
 } & GameParameters): Promise<void> {
-	embed.title ??= 'Rock Paper Scissors';
-	embed.color ??= 'RANDOM';
+	embed.title ||= 'Rock Paper Scissors';
+	embed.color ||= 'RANDOM';
 
 	checkForNotReplied(message);
 
@@ -73,42 +71,9 @@ export async function rps({
 		.setDescription('Click on the buttons to play')
 		.setTimestamp();
 
-	const channel = message.channel;
+	const { channel } = message;
 
-	// usually a channel is always included, if it isn't, it's most likely due to missing partials like in dm channels
-	if (!channel) {
-		throw new TypeError(
-			'Missing a channel, did you forget to include partials?'
-		);
-	}
-
-	// if it's not a dm channel, check for sufficient permissions
-	if (
-		channel instanceof TextChannel ||
-		channel instanceof NewsChannel ||
-		channel instanceof ThreadChannel
-	) {
-		const perms = channel.permissionsFor(message.guild?.me ?? '');
-
-		if (!perms?.has('ADD_REACTIONS')) {
-			const embed = new MessageEmbed()
-				.setColor('DARK_RED')
-				.setAuthor(tag, avatar)
-				.setTitle('Missing Permissions')
-				.setDescription(
-					`❌ I am missing the ${inlineCode(
-						'Add Reactions'
-					)} permission, please give it to me before using this command`
-				)
-				.setTimestamp();
-
-			message.reply({ embeds: [embed] });
-			return;
-		}
-		if (!perms?.has('SEND_MESSAGES')) {
-			return;
-		}
-	}
+	checkForPermissions(message, channel, tag, avatar);
 
 	if (opponent) {
 		const id = message instanceof Message ? message.author.id : message.user.id;
@@ -143,7 +108,7 @@ export async function rps({
 					});
 					const reacted: RPSReacted[] = [];
 
-					collector.on('collect', (i: ButtonInteraction) => {
+					collector.on('collect', async (i: ButtonInteraction) => {
 						if (!reacted.some((item) => item.userId === i.user.id)) {
 							reacted.push({ userId: i.user.id, customId: i.customId });
 
@@ -166,10 +131,11 @@ export async function rps({
 								gameEmbed
 							);
 
-							i.update({ embeds: [embed], components: [] });
+							await i.update({ embeds: [embed], components: [] });
+							collector.stop();
 						}
 					});
-					collector.on('end', (collected, reason) => {
+					collector.on('end', (_collected, reason) => {
 						collectorEnd(reason, msg);
 					});
 				} else {
@@ -199,17 +165,15 @@ export async function rps({
 						time: 15 * 1000
 					});
 
-					collector.on('collect', (i: ButtonInteraction) => {
+					collector.on('collect', async (i: ButtonInteraction) => {
 						const reaction = i.customId;
 						const bot = buttons[Math.floor(Math.random() * buttons.length)];
 						const embed = getBotWinner(reaction, bot, gameEmbed);
 
-						i.update({
-							embeds: [embed],
-							components: []
-						});
+						await i.update({ embeds: [embed], components: [] });
+						collector.stop();
 					});
-					collector.on('end', (collected, reason) => {
+					collector.on('end', (_collected, reason) => {
 						collectorEnd(reason, msg);
 					});
 				} else {
@@ -243,7 +207,7 @@ export async function rps({
 				});
 				const reacted: RPSReacted[] = [];
 
-				collector.on('collect', (i: ButtonInteraction) => {
+				collector.on('collect', async (i: ButtonInteraction) => {
 					if (!reacted.some((item) => item.userId === i.user.id)) {
 						reacted.push({ userId: i.user.id, customId: i.customId });
 
@@ -261,10 +225,11 @@ export async function rps({
 					if (reacted.length === 2) {
 						const embed = getOpponentWinner(reacted[0], reacted[1], gameEmbed);
 
-						i.update({ embeds: [embed], components: [] });
+						await i.update({ embeds: [embed], components: [] });
+						collector.stop();
 					}
 				});
-				collector.on('end', (collected, reason) => {
+				collector.on('end', (_collected, reason) => {
 					collectorEnd(reason, msg);
 				});
 			} catch (err: unknown) {
@@ -283,21 +248,18 @@ export async function rps({
 					const collector = msg.createMessageComponentCollector({
 						filter: (i) => interactionFilter(i, [message.author.id]),
 						componentType: 'BUTTON',
-						maxUsers: 1,
 						time: 15 * 1000
 					});
 
-					collector.on('collect', (i: ButtonInteraction) => {
+					collector.on('collect', async (i: ButtonInteraction) => {
 						const reaction = i.customId;
 						const bot = buttons[Math.floor(Math.random() * buttons.length)];
 						const embed = getBotWinner(reaction, bot, gameEmbed);
 
-						i.update({
-							embeds: [embed],
-							components: []
-						});
+						await i.update({ embeds: [embed], components: [] });
+						collector.stop();
 					});
-					collector.on('end', (collected, reason) => {
+					collector.on('end', (_collected, reason) => {
 						collectorEnd(reason, msg);
 					});
 				} else {

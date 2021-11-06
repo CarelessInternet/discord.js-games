@@ -8,5 +8,7 @@ export function tagAndAvatar(message: Message | CommandInteraction): string[] {
 			? message.author.displayAvatarURL({ dynamic: true })
 			: message.user.displayAvatarURL({ dynamic: true });
 
-	return [tag, avatar];
+	const id = message instanceof Message ? message.author.id : message.user.id;
+
+	return [tag, avatar, id];
 }

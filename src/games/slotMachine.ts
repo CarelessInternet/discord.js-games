@@ -9,7 +9,7 @@ import { checkForNotReplied, tagAndAvatar } from '../functions';
  * @param {EmojiResolvable[]} options.emojis - The emojis of the slot machine
  * @param {string} [options.embed.winMessage] - The win message if the user wins
  * @param {string} [options.embed.loseMessage] - The lose message if the user loses
- * @returns {Promise<boolean | undefined>} Returns whether or not the user won, or undefined for other scenarios, also can throw error if you made a mistake
+ * @returns {Promise<boolean>} Returns whether or not the user won, also can throw error if you made a mistake
  * @author CarelessInternet
  */
 export async function slotMachine({
@@ -22,11 +22,11 @@ export async function slotMachine({
 		winMessage?: string;
 		loseMessage?: string;
 	};
-} & GameParameters): Promise<boolean | undefined> {
-	embed.title ??= 'Slot Machine';
-	embed.color ??= 'RANDOM';
-	embed.winMessage ??= 'Congratulations, you won the slot machine! 🥳';
-	embed.loseMessage ??= 'Unlucky, you lost at the slot machine. 😔';
+} & GameParameters): Promise<boolean> {
+	embed.title ||= 'Slot Machine';
+	embed.color ||= 'RANDOM';
+	embed.winMessage ||= 'Congratulations, you won the slot machine! 🥳';
+	embed.loseMessage ||= 'Unlucky, you lost at the slot machine. 😔';
 
 	checkForNotReplied(message);
 
