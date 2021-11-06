@@ -8,6 +8,8 @@
 		"plugin:@typescript-eslint/recommended"
 	],
 	"rules": {
-		"no-console": 2
+		"no-console": 2,
+		"no-async-promise-executor": 1,
+		"@typescript-eslint/ban-ts-comment": 1
 	}
 }
