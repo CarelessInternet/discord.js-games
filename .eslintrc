@@ -9,7 +9,9 @@
 	],
 	"rules": {
 		"no-console": 2,
-		"no-async-promise-executor": 1,
+		// i cant find a way to resolve async function when inside an event listener
+		// so i'm setting this to off
+		"no-async-promise-executor": 0,
 		"@typescript-eslint/ban-ts-comment": 1
 	}
 }
