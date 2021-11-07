@@ -72,7 +72,6 @@ buttons.forEach((val, i) => {
  * @param {string} [options.embed.winMessage] - The message to display when the user or opponent wins
  * @param {string} [options.embed.tieMessage] - The message to display when the game ends in a tie
  * @param {string} [options.embed.timeEndMessage] - The message to display when time runs out
- * @param {string} [options.embed.footer] - The footer of the message embed
  * @returns {Promise<boolean>} Returns whether or not the message author won the game
  * @author CarelessInternet
  */
@@ -86,7 +85,6 @@ export async function connectFour({
 		winMessage?: string;
 		tieMessage?: string;
 		timeEndMessage?: string;
-		footer?: string;
 	};
 } & GameParameters): Promise<boolean> {
 	embed.title ||= 'Connect Four';

@@ -5,5 +5,6 @@ export interface GameParameters {
 	embed?: {
 		title?: string;
 		color?: ColorResolvable;
+		footer?: string;
 	};
 }

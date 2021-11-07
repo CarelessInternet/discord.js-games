@@ -27,6 +27,7 @@ export async function slotMachine({
 	embed.color ||= 'RANDOM';
 	embed.winMessage ||= 'Congratulations, you won the slot machine! 🥳';
 	embed.loseMessage ||= 'Unlucky, you lost at the slot machine. 😔';
+	embed.footer ||= '';
 
 	checkForNotReplied(message);
 
@@ -35,7 +36,8 @@ export async function slotMachine({
 		.setColor(embed.color)
 		.setAuthor(tag, avatar)
 		.setTitle(embed.title)
-		.setTimestamp();
+		.setTimestamp()
+		.setFooter(embed.footer);
 
 	for (const emoji of emojis) {
 		if (emoji instanceof GuildEmoji && !emoji.available) {

@@ -48,7 +48,6 @@ buttons.forEach((button) => {
  * @param {string} [options.embed.tieMessage] - The message to display when the user ties
  * @param {string} [options.embed.loseMessage] - The message to display when the user loses
  * @param {string} [options.embed.timeEndMessage] - The message to display when time runs out
- * @param {string} [options.embed.footer] - The footer of the message embed
  * @returns {Promise<'win' | 'tie' | 'loss'>} Returns whether the user won, tied, or lost
  * @author CarelessInternet
  */

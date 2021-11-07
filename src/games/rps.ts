@@ -60,6 +60,7 @@ export async function rps({
 } & GameParameters): Promise<void> {
 	embed.title ||= 'Rock Paper Scissors';
 	embed.color ||= 'RANDOM';
+	embed.footer ||= '';
 
 	checkForNotReplied(message);
 
@@ -69,7 +70,8 @@ export async function rps({
 		.setAuthor(tag, avatar)
 		.setTitle(embed.title)
 		.setDescription('Click on the buttons to play')
-		.setTimestamp();
+		.setTimestamp()
+		.setFooter(embed.footer);
 
 	checkForPermissions(message, tag, avatar);
 
