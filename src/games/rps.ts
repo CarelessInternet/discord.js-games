@@ -71,9 +71,7 @@ export async function rps({
 		.setDescription('Click on the buttons to play')
 		.setTimestamp();
 
-	const { channel } = message;
-
-	checkForPermissions(message, channel, tag, avatar);
+	checkForPermissions(message, tag, avatar);
 
 	if (opponent) {
 		const id = message instanceof Message ? message.author.id : message.user.id;
@@ -104,7 +102,7 @@ export async function rps({
 						filter: (i) => interactionFilter(i, [message.user.id, opponentId]),
 						componentType: 'BUTTON',
 						maxUsers: 2,
-						time: 15 * 1000
+						time: 60 * 1000
 					});
 					const reacted: RPSReacted[] = [];
 
@@ -162,7 +160,7 @@ export async function rps({
 						filter: (i) => interactionFilter(i, [message.user.id]),
 						componentType: 'BUTTON',
 						maxUsers: 1,
-						time: 15 * 1000
+						time: 60 * 1000
 					});
 
 					collector.on('collect', async (i: ButtonInteraction) => {
@@ -203,7 +201,7 @@ export async function rps({
 					filter: (i) => interactionFilter(i, [message.author.id, opponentId]),
 					componentType: 'BUTTON',
 					maxUsers: 2,
-					time: 15 * 1000
+					time: 60 * 1000
 				});
 				const reacted: RPSReacted[] = [];
 
@@ -248,7 +246,7 @@ export async function rps({
 					const collector = msg.createMessageComponentCollector({
 						filter: (i) => interactionFilter(i, [message.author.id]),
 						componentType: 'BUTTON',
-						time: 15 * 1000
+						time: 60 * 1000
 					});
 
 					collector.on('collect', async (i: ButtonInteraction) => {

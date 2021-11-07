@@ -11,10 +11,11 @@ import { inlineCode } from '@discordjs/builders';
 
 export function checkForPermissions(
 	message: Message | CommandInteraction,
-	channel: TextBasedChannels | null,
 	tag: string,
 	avatar: string
 ): void {
+	const { channel } = message;
+
 	// usually a channel is always included, if it isn't, it's most likely due to missing partials like in dm channels
 	if (!channel) {
 		throw new TypeError(

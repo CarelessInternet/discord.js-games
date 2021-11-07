@@ -106,9 +106,7 @@ export async function connectFour({
 		.setTimestamp()
 		.setFooter(embed.footer);
 
-	const { channel } = message;
-
-	checkForPermissions(message, channel, tag, avatar);
+	checkForPermissions(message, tag, avatar);
 
 	if (opponent?.user.bot && opponent.user.id !== message.client.user?.id) {
 		message.reply({
@@ -197,7 +195,7 @@ class Game {
 						buttons.some((item) => item.id === i.customId) &&
 						[this.authorId, this.opponentId].some((id) => id === i.user.id),
 					componentType: 'BUTTON',
-					idle: 45 * 1000
+					idle: 60 * 1000
 				});
 
 				collector.on('collect', (i) => {
@@ -245,7 +243,7 @@ class Game {
 							break;
 						}
 						default: {
-							reject('Game did not finish');
+							reject('Game most likely did not finish');
 							break;
 						}
 					}
