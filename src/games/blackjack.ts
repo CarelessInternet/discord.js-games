@@ -60,7 +60,6 @@ export async function blackjack({
 		tieMessage?: string;
 		loseMessage?: string;
 		timeEndMessage?: string;
-		footer?: string;
 	};
 } & GameParameters): Promise<'win' | 'tie' | 'loss'> {
 	embed.title ||= 'Blackjack';
