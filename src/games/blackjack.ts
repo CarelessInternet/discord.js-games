@@ -1,4 +1,3 @@
-import shuffle from 'shuffle-array';
 import blackjackJson from '../json/blackjack.json';
 import {
 	ButtonInteraction,
@@ -203,8 +202,18 @@ class Game {
 		return this.cards.dealer;
 	}
 
+	private shuffleArray(jsonArray: object[]): object[] {
+		const array = [...jsonArray];
+		for (let i = array.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[array[i], array[j]] = [array[j], array[i]];
+		}
+
+		return array;
+	}
+
 	private createGame(): BlackjackCard[] {
-		return shuffle(blackjackJson) as BlackjackCard[];
+		return this.shuffleArray(blackjackJson) as BlackjackCard[];
 	}
 
 	private get drawCard(): BlackjackCard {
@@ -219,10 +228,9 @@ class Game {
 	}
 
 	private handValue(hand: 'player' | 'dealer'): [string, number] {
-		let score = this[hand].reduce(
-			(acc, card) => acc + this.cardValue(card.value),
-			0
-		);
+		let score = this[hand].reduce((acc, card) => {
+			return acc + this.cardValue(card.value);
+		}, 0);
 		let aces = this[hand].filter((card) => card.value === 'ACE').length;
 
 		while (aces > 0) {
@@ -235,7 +243,11 @@ class Game {
 		}
 
 		if (score < 21) return [score.toString(), score];
-		else if (score === 21) return ['Blackjack!', score];
+		else if (score === 21)
+			return [
+				this.hasBlackjack(this[hand], score) ? 'Blackjack!' : '21',
+				score
+			];
 		else return ['Bust!', score];
 	}
 
@@ -281,22 +293,25 @@ class Game {
 		this.gameEmbed.setFields(fields);
 	}
 
+	private hasBlackjack(cards: BlackjackCard[], score: number) {
+		const arrayOf10 = ['JACK', 'QUEEN', 'KING', '10'];
+		const hasBeginningAce = () =>
+			cards[0].value === 'ACE' || cards[1].value === 'ACE';
+		const checkFor10 = () =>
+			cards.some((card) => arrayOf10.includes(card.value));
+
+		return checkFor10() && hasBeginningAce() && score === 21;
+	}
+
 	private dealersTurn(
 		i: ButtonInteraction,
 		collector: InteractionCollector<ButtonInteraction>
 	): void {
 		this.msg.components = [];
 
-		const arrayOf10 = ['JACK', 'QUEEN', 'KING', '10'];
 		const [_playerScoreStr, playerScoreInt] = this.handValue('player');
 		const hasBeginningAce = (cards: BlackjackCard[]) =>
 			cards[0].value === 'ACE' || cards[1].value === 'ACE';
-
-		const checkFor10 = (cards: BlackjackCard[]) =>
-			cards.some((card) => arrayOf10.includes(card.value));
-
-		const hasBlackjack = (cards: BlackjackCard[], score: number) =>
-			checkFor10(cards) && score === 21;
 
 		const playerHasBeginningAce = hasBeginningAce(this.player);
 
@@ -314,13 +329,13 @@ class Game {
 				if (
 					playerHasBeginningAce &&
 					!dealerHasBeginningAce &&
-					hasBlackjack(this.player, playerScoreInt)
+					this.hasBlackjack(this.player, playerScoreInt)
 				) {
 					this.authorWon = 'win';
 				} else if (
 					dealerHasBeginningAce &&
 					!playerHasBeginningAce &&
-					hasBlackjack(this.dealer, dealerScoreInt)
+					this.hasBlackjack(this.dealer, dealerScoreInt)
 				) {
 					this.authorWon = 'loss';
 				} else {
