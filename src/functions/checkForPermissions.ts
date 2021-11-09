@@ -3,7 +3,6 @@ import {
 	Message,
 	MessageEmbed,
 	NewsChannel,
-	TextBasedChannels,
 	TextChannel,
 	ThreadChannel
 } from 'discord.js';
