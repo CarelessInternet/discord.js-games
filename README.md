@@ -86,3 +86,7 @@ client.on('messageCreate', async message => {
   }
 });
 ```
+
+## Issues, bugs, questions, PRs, etc
+
+Open up an issue for anything relating to this package, that can be bugs, issues, feature requests, etc. Same goes for pull requests, feel free to submit one for improved performance, better code practices, etc.
