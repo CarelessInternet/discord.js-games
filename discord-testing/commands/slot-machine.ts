@@ -10,14 +10,16 @@ export const data: Command['data'] = new SlashCommandBuilder()
 	.setDescription('Play the slot machine');
 
 export const execute: Command['execute'] = ({ interaction }) => {
-	slotMachine({
-		message: interaction,
-		emojis: ['😔', '🥱', '🦴', '🎱'],
-		...(interaction instanceof CommandInteraction && {
-			embed: { color: 'NOT_QUITE_BLACK', winMessage: 'good job boi' }
-		}),
-		...(interaction instanceof Message && {
-			embed: { title: 'slot machine with message', loseMessage: 'boi u suck' }
-		})
-	});
+	try {
+		slotMachine({
+			message: interaction,
+			emojis: ['😔', '🥱', '🦴', '🎱'],
+			...(interaction instanceof CommandInteraction && {
+				embed: { color: 'NOT_QUITE_BLACK', winMessage: 'good job boi' }
+			}),
+			...(interaction instanceof Message && {
+				embed: { title: 'slot machine with message', loseMessage: 'boi u suck' }
+			})
+		});
+	} catch (_err) {}
 };

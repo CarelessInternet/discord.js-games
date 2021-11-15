@@ -16,29 +16,32 @@ export const data: Command['data'] = new SlashCommandBuilder()
 	);
 
 export const execute: Command['execute'] = ({ interaction }) => {
-	if (interaction instanceof CommandInteraction) {
-		const opponent = interaction.options.getMember('opponent');
-		rps({
-			message: interaction,
-			...(opponent instanceof GuildMember && {
-				opponent,
-				embed: {
-					title: 'rps with slash command',
-					color: 'BLURPLE'
-				}
-			})
-		});
-	} else {
-		const opponent = interaction.mentions.members?.first();
+	try {
+		if (interaction instanceof CommandInteraction) {
+			const opponent = interaction.options.getMember('opponent');
 
-		rps({
-			message: interaction,
-			...(opponent instanceof GuildMember && {
-				opponent,
-				embed: {
-					title: 'rps with message'
-				}
-			})
-		});
-	}
+			rps({
+				message: interaction,
+				...(opponent instanceof GuildMember && {
+					opponent,
+					embed: {
+						title: 'rps with slash command',
+						color: 'BLURPLE'
+					}
+				})
+			});
+		} else {
+			const opponent = interaction.mentions.members?.first();
+
+			rps({
+				message: interaction,
+				...(opponent instanceof GuildMember && {
+					opponent,
+					embed: {
+						title: 'rps with message'
+					}
+				})
+			});
+		}
+	} catch (_err) {}
 };

@@ -9,5 +9,7 @@ export const data: Command['data'] = new SlashCommandBuilder()
 	.setDescription('Play a classic game of blackjack');
 
 export const execute: Command['execute'] = ({ interaction }) => {
-	blackjack({ message: interaction }).catch(console.error);
+	try {
+		blackjack({ message: interaction }).catch(console.error);
+	} catch (_err) {}
 };
