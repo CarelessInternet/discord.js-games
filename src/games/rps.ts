@@ -40,10 +40,6 @@ buttons.forEach((val) => {
 	);
 });
 
-const interactionFilter = (i: ButtonInteraction, players: string[]) =>
-	buttons.some((item) => item.id === i.customId) &&
-	players.some((id) => id === i.user.id);
-
 /**
  * Play a game of rock paper scissors
  * @param {GameParameters & object} options - Options for the game
@@ -57,14 +53,22 @@ export async function rps({
 	embed = {}
 }: {
 	opponent?: GuildMember;
-} & GameParameters): Promise<void> {
+	embed?: {
+		winMessage?: string;
+		tieMessage?: string;
+		timeEndMessage?: string;
+	};
+} & GameParameters): Promise<'win' | 'tie' | 'loss'> {
 	embed.title ||= 'Rock Paper Scissors';
 	embed.color ||= 'RANDOM';
+	embed.winMessage ||= '{user} has won against {opponent}!';
+	embed.tieMessage ||= "It's a tie!";
+	embed.timeEndMessage ||= 'Time has ran out, nobody wins!';
 	embed.footer ||= '';
 
 	checkForNotReplied(message);
 
-	const [tag, avatar] = tagAndAvatar(message);
+	const [tag, avatar, authorId] = tagAndAvatar(message);
 	const gameEmbed = new MessageEmbed()
 		.setColor(embed.color)
 		.setAuthor(tag, avatar)
@@ -75,301 +79,203 @@ export async function rps({
 
 	checkForPermissions(message, tag, avatar);
 
-	if (opponent) {
-		const id = message instanceof Message ? message.author.id : message.user.id;
-
-		if (opponent.id === id) {
-			message.reply({
-				content: 'You cannot battle against yourself',
-				...(message instanceof CommandInteraction && { ephemeral: true })
-			});
-			return;
-		}
+	if (opponent?.user.bot && opponent.user.id !== message.client.user?.id) {
+		message.reply({
+			content: 'User may not be a bot',
+			...(message instanceof CommandInteraction && { ephemeral: true })
+		});
+		throw new Error('User is a bot, cannot play rock paper scissors');
 	}
-
-	if (message instanceof CommandInteraction) {
-		if (opponent) {
-			const opponentId = opponent.id;
-			gameEmbed.addField('Opponent', memberNicknameMention(opponentId), true);
-
-			const msg = await message.reply({
-				embeds: [gameEmbed],
-				components: [row],
-				fetchReply: true
-			});
-
-			try {
-				if (msg instanceof Message) {
-					const collector = msg.createMessageComponentCollector({
-						filter: (i) => interactionFilter(i, [message.user.id, opponentId]),
-						componentType: 'BUTTON',
-						maxUsers: 2,
-						time: 60 * 1000
-					});
-					const reacted: RPSReacted[] = [];
-
-					collector.on('collect', async (i: ButtonInteraction) => {
-						if (!reacted.some((item) => item.userId === i.user.id)) {
-							reacted.push({ userId: i.user.id, customId: i.customId });
-
-							// max length is 2, which means that all players have reacted, that's why it is 2 and not some other number
-							if (reacted.length !== 2) {
-								gameEmbed.setDescription(
-									`Waiting for ${memberNicknameMention(
-										opponentId === i.user.id ? message.user.id : opponentId
-									)}...`
-								);
-
-								i.update({ embeds: [gameEmbed] });
-							}
-						}
-
-						if (reacted.length === 2) {
-							const embed = getOpponentWinner(
-								reacted[0],
-								reacted[1],
-								gameEmbed
-							);
-
-							await i.update({ embeds: [embed], components: [] });
-							collector.stop();
-						}
-					});
-					collector.on('end', (_collected, reason) => {
-						collectorEnd(reason, msg);
-					});
-				} else {
-					throw new TypeError(
-						'Got an APIMessage instead of a Message instance'
-					);
-				}
-			} catch (err: unknown) {
-				message.followUp({
-					content: `An error occured whilst playing rock paper scissors, please try again later\nError: ${err}`,
-					ephemeral: true
-				});
-			}
-		} else {
-			const msg = await message.reply({
-				embeds: [gameEmbed],
-				components: [row],
-				fetchReply: true
-			});
-
-			try {
-				if (msg instanceof Message) {
-					const collector = msg.createMessageComponentCollector({
-						filter: (i) => interactionFilter(i, [message.user.id]),
-						componentType: 'BUTTON',
-						maxUsers: 1,
-						time: 60 * 1000
-					});
-
-					collector.on('collect', async (i: ButtonInteraction) => {
-						const reaction = i.customId;
-						const bot = buttons[Math.floor(Math.random() * buttons.length)];
-						const embed = getBotWinner(reaction, bot, gameEmbed);
-
-						await i.update({ embeds: [embed], components: [] });
-						collector.stop();
-					});
-					collector.on('end', (_collected, reason) => {
-						collectorEnd(reason, msg);
-					});
-				} else {
-					throw new TypeError(
-						'Got an APIMessage instead of a Message instance'
-					);
-				}
-			} catch (err: unknown) {
-				message.followUp({
-					content: `An error occured whilst playing rock paper scissors, please try again later\n Error: ${err}`,
-					ephemeral: true
-				});
-			}
-		}
-	} else if (message instanceof Message) {
-		if (opponent) {
-			const opponentId = opponent.id;
-			gameEmbed.addField('Opponent', memberNicknameMention(opponentId), true);
-
-			const msg = await message.reply({
-				embeds: [gameEmbed],
-				components: [row]
-			});
-
-			try {
-				const collector = msg.createMessageComponentCollector({
-					filter: (i) => interactionFilter(i, [message.author.id, opponentId]),
-					componentType: 'BUTTON',
-					maxUsers: 2,
-					time: 60 * 1000
-				});
-				const reacted: RPSReacted[] = [];
-
-				collector.on('collect', async (i: ButtonInteraction) => {
-					if (!reacted.some((item) => item.userId === i.user.id)) {
-						reacted.push({ userId: i.user.id, customId: i.customId });
-
-						if (reacted.length !== 2) {
-							gameEmbed.setDescription(
-								`Waiting for ${memberNicknameMention(
-									opponentId === i.user.id ? message.author.id : opponentId
-								)}...`
-							);
-
-							i.update({ embeds: [gameEmbed] });
-						}
-					}
-
-					if (reacted.length === 2) {
-						const embed = getOpponentWinner(reacted[0], reacted[1], gameEmbed);
-
-						await i.update({ embeds: [embed], components: [] });
-						collector.stop();
-					}
-				});
-				collector.on('end', (_collected, reason) => {
-					collectorEnd(reason, msg);
-				});
-			} catch (err: unknown) {
-				message.reply({
-					content: `An error occured whilst playing rock paper scissors, please try again later\nError: ${err}`
-				});
-			}
-		} else {
-			const msg = await message.reply({
-				embeds: [gameEmbed],
-				components: [row]
-			});
-
-			try {
-				if (msg instanceof Message) {
-					const collector = msg.createMessageComponentCollector({
-						filter: (i) => interactionFilter(i, [message.author.id]),
-						componentType: 'BUTTON',
-						time: 60 * 1000
-					});
-
-					collector.on('collect', async (i: ButtonInteraction) => {
-						const reaction = i.customId;
-						const bot = buttons[Math.floor(Math.random() * buttons.length)];
-						const embed = getBotWinner(reaction, bot, gameEmbed);
-
-						await i.update({ embeds: [embed], components: [] });
-						collector.stop();
-					});
-					collector.on('end', (_collected, reason) => {
-						collectorEnd(reason, msg);
-					});
-				} else {
-					throw new TypeError(
-						'Got an APIMessage instead of a Message instance'
-					);
-				}
-			} catch (err: unknown) {
-				message.reply({
-					content: `An error occured whilst playing rock paper scissors, please try again later\n Error: ${err}`
-				});
-			}
-		}
-	} else {
-		throw new TypeError(
-			'The message must be an instance of CommandInteraction or Message'
+	if (opponent?.id === authorId) {
+		message.reply({
+			content: 'You cannot battle against yourself',
+			...(message instanceof CommandInteraction && { ephemeral: true })
+		});
+		throw new Error(
+			'User is trying to battle against himself, cannot play rock paper scissors'
 		);
 	}
-}
 
-function outcome(
-	player: string,
-	bot: string,
-	emojis: Buttons[]
-): 'Win' | 'Tie' | 'Loss' {
-	if (
-		(player === emojis[0].id && bot === emojis[2].id) ||
-		(player === emojis[2].id && bot === emojis[1].id) ||
-		(player === emojis[1].id && bot === emojis[0].id)
-	) {
-		return 'Win';
-	} else if (player === bot) {
-		return 'Tie';
-	} else {
-		return 'Loss';
-	}
-}
-
-function getBotWinner(
-	reaction: string,
-	bot: Buttons,
-	embed: MessageEmbed
-): MessageEmbed {
-	embed.addField(
-		'Your Choice',
-		buttons.filter((item) => item.id === reaction)[0].label,
-		true
+	const game = new Game(
+		message,
+		gameEmbed,
+		{
+			winMessage: embed.winMessage,
+			tieMessage: embed.tieMessage,
+			timeEndMessage: embed.timeEndMessage
+		},
+		opponent
 	);
-	embed.addField("Bot's Choice", bot.label, true);
-	embed.addField('Outcome', outcome(reaction, bot.id, buttons), true);
+	const result = await game.play();
 
-	return embed;
+	return result;
 }
 
-function getOpponentWinner(
-	player1: RPSReacted,
-	player2: RPSReacted,
-	embed: MessageEmbed
-): MessageEmbed {
-	embed.setDescription('View results below!');
+class Game {
+	private botId: string;
+	private opponentId: string;
+	private authorId: string;
+	private winner: string | null;
+	private msg: Message<boolean>;
+	private reacted: RPSReacted[];
 
-	const result = outcome(player1.customId, player2.customId, buttons);
-
-	const choices = [
-		`${memberNicknameMention(player1.userId)} ${
-			buttons.filter((item) => item.id === player1.customId)[0].label
-		}`,
-		`${memberNicknameMention(player2.userId)} ${
-			buttons.filter((item) => item.id === player2.customId)[0].label
-		}`
-	].join('\n');
-	embed.addField('Choices', choices, true);
-
-	if (result === 'Win') {
-		embed.addField(
-			'Outcome',
-			`${memberNicknameMention(player1.userId)} Won`,
-			true
-		);
-	} else if (result === 'Loss') {
-		embed.addField(
-			'Outcome',
-			`${memberNicknameMention(player2.userId)} Won`,
-			true
-		);
-	} else {
-		embed.addField('Outcome', 'Tie', true);
+	constructor(
+		private message: Message | CommandInteraction,
+		private gameEmbed: MessageEmbed,
+		private embedOptions: {
+			winMessage: string;
+			tieMessage: string;
+			timeEndMessage: string;
+		},
+		private opponent?: GuildMember
+	) {
+		this.authorId =
+			this.message instanceof Message
+				? this.message.author.id
+				: this.message.user.id;
+		this.botId = this.message.client.user?.id as string;
+		this.opponentId = this.opponent?.user.id || this.botId;
+		this.reacted = [];
+		this.winner = null;
 	}
 
-	return embed;
-}
+	public async play(): Promise<'win' | 'tie' | 'loss'> {
+		return new Promise(async (resolve, reject) => {
+			this.msg = (await this.message.reply({
+				embeds: [this.gameEmbed],
+				components: [row],
+				fetchReply: true
+			})) as Message;
 
-function collectorEnd(reason: string, msg: Message): void {
-	switch (reason) {
-		case 'time': {
-			msg.edit({
-				content: 'Game aborted due to no response from one or both users',
-				embeds: [],
-				components: []
+			const collector = this.msg.createMessageComponentCollector({
+				filter: (i) =>
+					buttons.some((item) => item.id === i.customId) &&
+					[this.authorId, this.opponentId].some((id) => id === i.user.id),
+				componentType: 'BUTTON',
+				idle: 60 * 1000
 			});
-			break;
-		}
-		case 'messageDelete': {
-			msg.channel.send({
-				content: 'Game aborted because the message was deleted'
+
+			collector.on('collect', async (i) => {
+				if (!this.reacted.some((item) => item.userId === i.user.id)) {
+					this.reacted.push({ userId: i.user.id, customId: i.customId });
+
+					if (this.reacted.length < 2 && this.opponentId !== this.botId) {
+						this.gameEmbed.setDescription(
+							`Waiting for ${memberNicknameMention(
+								i.user.id === this.authorId ? this.opponentId : this.authorId
+							)}...`
+						);
+
+						i.update({ embeds: [this.gameEmbed] });
+					}
+
+					if (this.opponentId === this.botId || this.reacted.length >= 2) {
+						await this.evaluateWinner(i);
+						collector.stop();
+					}
+				}
 			});
-			break;
+			collector.on('end', (_collected, reason) => {
+				switch (reason) {
+					case 'idle': {
+						this.msg.edit({
+							content: this.embedOptions.timeEndMessage,
+							embeds: [],
+							components: []
+						});
+						reject('Game did not finish');
+						break;
+					}
+					case 'messageDelete': {
+						this.msg.channel.send({
+							content: 'Game aborted because the message was deleted'
+						});
+						reject('Message was deleted, game did not finish');
+						break;
+					}
+					case 'user': {
+						resolve(
+							this.winner === this.authorId
+								? 'win'
+								: this.winner === 'tie'
+								? 'tie'
+								: 'loss'
+						);
+						break;
+					}
+					default: {
+						reject('Game most likely did not finish');
+					}
+				}
+			});
+		});
+	}
+
+	private get outcome(): string {
+		const [player, opponent] = [
+			this.reacted[0].customId,
+			this.reacted[1].customId
+		];
+
+		if (
+			(player === buttons[0].id && opponent === buttons[2].id) ||
+			(player === buttons[2].id && opponent === buttons[1].id) ||
+			(player === buttons[1].id && opponent === buttons[0].id)
+		) {
+			return this.reacted[0].userId;
+		} else if (player === opponent) {
+			return 'tie';
+		} else {
+			return this.reacted[1].userId;
 		}
-		default: {
-			break;
+	}
+
+	private async evaluateWinner(i: ButtonInteraction): Promise<void> {
+		if (this.opponentId === this.botId) {
+			this.reacted.push({
+				userId: this.opponentId,
+				customId: buttons[Math.floor(Math.random() * buttons.length)].id
+			});
 		}
+
+		this.winner = this.outcome;
+
+		if (this.winner === 'tie') {
+			this.gameEmbed.setDescription(this.embedOptions.tieMessage);
+		} else {
+			const winner =
+				this.winner === this.authorId ? this.authorId : this.opponentId;
+			const loser =
+				this.winner === this.authorId ? this.opponentId : this.authorId;
+
+			this.embedOptions.winMessage = this.embedOptions.winMessage.replace(
+				new RegExp('{user}', 'g'),
+				memberNicknameMention(winner)
+			);
+			this.embedOptions.winMessage = this.embedOptions.winMessage.replace(
+				new RegExp('{opponent}', 'g'),
+				memberNicknameMention(loser)
+			);
+
+			this.gameEmbed.setDescription(this.embedOptions.winMessage);
+		}
+
+		this.gameEmbed.addField(
+			'Opponent',
+			memberNicknameMention(this.opponentId),
+			true
+		);
+		this.gameEmbed.addField(
+			'Choice',
+			buttons.filter((item) => item.id === this.reacted[0].customId)[0].label,
+			true
+		);
+		this.gameEmbed.addField(
+			'Choice',
+			buttons.filter((item) => item.id === this.reacted[1].customId)[0].label,
+			true
+		);
+
+		await i.update({ embeds: [this.gameEmbed], components: [] });
 	}
 }

@@ -131,66 +131,59 @@ class Game {
 
 	public play(): Promise<'win' | 'tie' | 'loss'> {
 		return new Promise(async (resolve, reject) => {
-			const msg = await this.message.reply({
+			this.msg = (await this.message.reply({
 				embeds: [this.gameEmbed],
 				components: [row],
 				fetchReply: true
+			})) as Message;
+
+			const collector = this.msg.createMessageComponentCollector({
+				filter: (i) =>
+					buttons.some((button) => button.id === i.customId) &&
+					this.authorId === i.user.id,
+				componentType: 'BUTTON',
+				idle: 60 * 1000
 			});
 
-			if (msg instanceof Message) {
-				this.msg = msg;
+			collector.on('collect', (i) => {
+				if (i.customId === 'hit') {
+					this.player.push(this.drawCard);
+					this.editFields();
 
-				const collector = this.msg.createMessageComponentCollector({
-					filter: (i) =>
-						buttons.some((button) => button.id === i.customId) &&
-						this.authorId === i.user.id,
-					componentType: 'BUTTON',
-					idle: 60 * 1000
-				});
-
-				collector.on('collect', (i) => {
-					if (i.customId === 'hit') {
-						this.player.push(this.drawCard);
-						this.editFields();
-
-						this.handValue('player')[1] >= 21
-							? this.dealersTurn(i, collector)
-							: i.update({ embeds: [this.gameEmbed] });
-					} else if (i.customId === 'stand') {
-						this.dealersTurn(i, collector);
+					this.handValue('player')[1] >= 21
+						? this.dealersTurn(i, collector)
+						: i.update({ embeds: [this.gameEmbed] });
+				} else if (i.customId === 'stand') {
+					this.dealersTurn(i, collector);
+				}
+			});
+			collector.on('end', (_collected, reason) => {
+				switch (reason) {
+					case 'idle': {
+						this.msg.edit({
+							content: this.embedOptions.timeEndMessage,
+							embeds: [],
+							components: []
+						});
+						reject('Game did not finish');
+						break;
 					}
-				});
-				collector.on('end', (_collected, reason) => {
-					switch (reason) {
-						case 'idle': {
-							msg.edit({
-								content: this.embedOptions.timeEndMessage,
-								embeds: [],
-								components: []
-							});
-							reject('Game did not finish');
-							break;
-						}
-						case 'messageDelete': {
-							msg.channel.send({
-								content: 'Game aborted because the message was deleted'
-							});
-							reject('Message was deleted, game did not finish');
-							break;
-						}
-						case 'user': {
-							resolve(this.authorWon);
-							break;
-						}
-						default: {
-							reject('Game most likely did not finish');
-							break;
-						}
+					case 'messageDelete': {
+						this.msg.channel.send({
+							content: 'Game aborted because the message was deleted'
+						});
+						reject('Message was deleted, game did not finish');
+						break;
 					}
-				});
-			} else {
-				reject('Got an APIMessage instead of a Message instance');
-			}
+					case 'user': {
+						resolve(this.authorWon);
+						break;
+					}
+					default: {
+						reject('Game most likely did not finish');
+					}
+				}
+			});
 		});
 	}
 
@@ -217,8 +210,7 @@ class Game {
 	}
 
 	private get drawCard(): BlackjackCard {
-		// @ts-ignore: the deck always has a card to draw, it cannot return undefined
-		return this.deck.shift();
+		return this.deck.shift() as BlackjackCard;
 	}
 
 	private cardValue(card: string): number {
@@ -300,7 +292,9 @@ class Game {
 		const checkFor10 = () =>
 			cards.some((card) => arrayOf10.includes(card.value));
 
-		return checkFor10() && hasBeginningAce() && score === 21;
+		return (
+			checkFor10() && hasBeginningAce() && score === 21 && cards.length === 2
+		);
 	}
 
 	private dealersTurn(

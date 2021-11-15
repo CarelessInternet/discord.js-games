@@ -72,7 +72,7 @@ buttons.forEach((val, i) => {
  * @param {string} [options.embed.winMessage] - The message to display when the user or opponent wins
  * @param {string} [options.embed.tieMessage] - The message to display when the game ends in a tie
  * @param {string} [options.embed.timeEndMessage] - The message to display when time runs out
- * @returns {Promise<boolean>} Returns whether or not the message author won the game
+ * @returns {Promise<boolean>} Returns whether the user won, tied, or lost
  * @author CarelessInternet
  */
 export async function connectFour({
@@ -86,7 +86,7 @@ export async function connectFour({
 		tieMessage?: string;
 		timeEndMessage?: string;
 	};
-} & GameParameters): Promise<boolean> {
+} & GameParameters): Promise<'win' | 'tie' | 'loss'> {
 	embed.title ||= 'Connect Four';
 	embed.color ||= 'RANDOM';
 	embed.winMessage ||= '{user} has won against {opponent}!';
@@ -170,85 +170,83 @@ class Game {
 				? this.message.author.id
 				: this.message.user.id;
 
-		// @ts-ignore: <Client>.user is nullable for some reason, probably due to the client not being logged in when initializing the client class
-		this.botId = this.message.client.user?.id;
+		this.botId = this.message.client.user?.id as string;
 		this.opponentId = this.opponent?.user.id || this.botId;
 		this.authorsTurn = this.opponentId === this.botId ? true : false;
 		this.winner = null;
 	}
 
-	public play(): Promise<boolean> {
+	public play(): Promise<'win' | 'tie' | 'loss'> {
 		return new Promise(async (resolve, reject) => {
-			const msg = await this.message.reply({
+			this.msg = (await this.message.reply({
 				embeds: [this.getEmbed],
 				components: [row1, row2],
 				fetchReply: true
+			})) as Message;
+
+			const collector = this.msg.createMessageComponentCollector({
+				filter: (i) =>
+					buttons.some((item) => item.id === i.customId) &&
+					[this.authorId, this.opponentId].some((id) => id === i.user.id),
+				componentType: 'BUTTON',
+				idle: 60 * 1000
 			});
 
-			if (msg instanceof Message) {
-				this.msg = msg;
+			collector.on('collect', (i) => {
+				const turn = this.authorsTurn ? this.authorId : this.opponentId;
 
-				const collector = this.msg.createMessageComponentCollector({
-					filter: (i) =>
-						buttons.some((item) => item.id === i.customId) &&
-						[this.authorId, this.opponentId].some((id) => id === i.user.id),
-					componentType: 'BUTTON',
-					idle: 60 * 1000
-				});
+				if (turn === i.user.id) {
+					const column = parseInt(i.customId) - 1;
+					this.fillTile(column);
 
-				collector.on('collect', (i) => {
-					const turn = this.authorsTurn ? this.authorId : this.opponentId;
+					if (this.opponentId === this.botId && !this.winner) {
+						const randomColumn = randomInt(this.horizontalLength);
+						this.fillTile(randomColumn);
+					}
 
-					if (turn === i.user.id) {
-						const column = parseInt(i.customId) - 1;
-						this.fillTile(column);
+					i.update({
+						embeds: [this.getEmbed],
+						components: this.msg.components
+					});
 
-						if (this.opponentId === this.botId && !this.winner) {
-							const randomColumn = randomInt(this.horizontalLength);
-							this.fillTile(randomColumn);
-						}
-
-						i.update({
-							embeds: [this.getEmbed],
-							components: this.msg.components
+					if (this.winner) {
+						collector.stop();
+					}
+				}
+			});
+			collector.on('end', (_collected, reason) => {
+				switch (reason) {
+					case 'idle': {
+						this.msg.edit({
+							content: this.embedOptions.timeEndMessage,
+							embeds: [],
+							components: []
 						});
-
-						if (this.winner) {
-							collector.stop();
-						}
+						reject('Game did not finish');
+						break;
 					}
-				});
-				collector.on('end', (_collected, reason) => {
-					switch (reason) {
-						case 'idle': {
-							msg.edit({
-								content: this.embedOptions.timeEndMessage,
-								embeds: [],
-								components: []
-							});
-							reject('Game did not finish');
-							break;
-						}
-						case 'messageDelete': {
-							msg.channel.send({
-								content: 'Game aborted because the message was deleted'
-							});
-							reject('Message was deleted, game did not finish');
-							break;
-						}
-						case 'user': {
-							resolve(this.winner === this.authorId ? true : false);
-							break;
-						}
-						default: {
-							reject('Game most likely did not finish');
-							break;
-						}
+					case 'messageDelete': {
+						this.msg.channel.send({
+							content: 'Game aborted because the message was deleted'
+						});
+						reject('Message was deleted, game did not finish');
+						break;
 					}
-				});
-			} else {
-				reject('Got an APIMessage instead of a Message instance');
-			}
+					case 'user': {
+						resolve(
+							this.winner === this.authorId
+								? 'win'
+								: this.winner === 'tie'
+								? 'tie'
+								: 'loss'
+						);
+						break;
+					}
+					default: {
+						reject('Game most likely did not finish');
+					}
+				}
+			});
 		});
 	}
 
