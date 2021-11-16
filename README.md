@@ -1,3 +1,11 @@
+<div align="center">
+  <img src="https://img.shields.io/npm/dw/discord.js-games">
+  <img src="https://img.shields.io/npm/l/discord.js-games">
+  <img src="https://img.shields.io/node/v/discord.js-games?color=yellow">
+  <img src="https://img.shields.io/npm/v/discord.js-games">
+  <img src="https://img.shields.io/github/commit-activity/m/CarelessInternet/discord.js-games?color=purple">
+</div>
+
 # discord.js-games
 
 A discord.js v13 module which allows you to add minigames to your bot super easily!
@@ -13,7 +21,7 @@ A discord.js v13 module which allows you to add minigames to your bot super easi
 
 ## Documentation
 
-~~You can find it in the wiki section of the GitHub repository.~~ (will add soon, just look at the `discord-testing/commands` folder for examples)
+You can find it in the [wiki section](https://github.com/CarelessInternet/discord.js-games/wiki) of the [GitHub repository](https://github.com/CarelessInternet/discord.js-games).
 
 ## How to??????
 
