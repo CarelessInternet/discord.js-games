@@ -1,2 +1,2 @@
 export * from './games';
-export * from './interfaces';
+export { GameParameters } from './interfaces';

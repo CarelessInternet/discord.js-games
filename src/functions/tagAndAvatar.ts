@@ -1,6 +1,12 @@
-import { CommandInteraction, Message } from 'discord.js';
+import {
+	CommandInteraction,
+	ContextMenuInteraction,
+	Message
+} from 'discord.js';
 
-export function tagAndAvatar(message: Message | CommandInteraction): string[] {
+export function tagAndAvatar(
+	message: Message | CommandInteraction | ContextMenuInteraction
+): string[] {
 	const tag =
 		message instanceof Message ? message.author.tag : message.user.tag;
 	const avatar =

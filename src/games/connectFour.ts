@@ -2,6 +2,7 @@
 
 import {
 	CommandInteraction,
+	ContextMenuInteraction,
 	GuildMember,
 	Message,
 	MessageActionRow,
@@ -69,10 +70,9 @@ buttons.forEach((val, i) => {
  * Plays a game of connect 4
  * @param {GameParameters & object} options - Options for the game
  * @param {GuildMember} [options.opponent] - The opponent the user wants to challenge
- * @param {string} [options.embed.winMessage] - The message to display when the user or opponent wins
  * @param {string} [options.embed.tieMessage] - The message to display when the game ends in a tie
  * @param {string} [options.embed.timeEndMessage] - The message to display when time runs out
- * @returns {Promise<boolean>} Returns whether the user won, tied, or lost
+ * @returns {Promise<'win' | 'tie' | 'loss'>} Returns whether the user won, tied, or lost
  * @author CarelessInternet
  */
 export async function connectFour({
@@ -82,7 +82,6 @@ export async function connectFour({
 }: {
 	opponent?: GuildMember;
 	embed?: {
-		winMessage?: string;
 		tieMessage?: string;
 		timeEndMessage?: string;
 	};
@@ -155,7 +154,7 @@ class Game {
 	};
 
 	constructor(
-		private message: Message | CommandInteraction,
+		private message: Message | CommandInteraction | ContextMenuInteraction,
 		private gameEmbed: MessageEmbed,
 		private embedOptions: {
 			winMessage: string;

@@ -7,7 +7,6 @@ import { checkForNotReplied, tagAndAvatar } from '../functions';
  * Plays the slot machine
  * @param {GameParameters & object} options - Options for the game
  * @param {EmojiResolvable[]} options.emojis - The emojis of the slot machine
- * @param {string} [options.embed.winMessage] - The win message if the user wins
  * @param {string} [options.embed.loseMessage] - The lose message if the user loses
  * @returns {Promise<boolean>} Returns whether or not the user won, also can throw error if you made a mistake
  * @author CarelessInternet
@@ -19,7 +18,6 @@ export async function slotMachine({
 }: {
 	emojis: EmojiResolvable[];
 	embed?: {
-		winMessage?: string;
 		loseMessage?: string;
 	};
 } & GameParameters): Promise<boolean> {

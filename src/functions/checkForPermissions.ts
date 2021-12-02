@@ -1,5 +1,6 @@
 import {
 	CommandInteraction,
+	ContextMenuInteraction,
 	Message,
 	MessageEmbed,
 	NewsChannel,
@@ -9,7 +10,7 @@ import {
 import { inlineCode } from '@discordjs/builders';
 
 export function checkForPermissions(
-	message: Message | CommandInteraction,
+	message: Message | CommandInteraction | ContextMenuInteraction,
 	tag: string,
 	avatar: string
 ): void {

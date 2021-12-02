@@ -1,6 +1,7 @@
 import {
 	ButtonInteraction,
 	CommandInteraction,
+	ContextMenuInteraction,
 	GuildMember,
 	Message,
 	MessageActionRow,
@@ -44,7 +45,9 @@ buttons.forEach((val) => {
  * Play a game of rock paper scissors
  * @param {GameParameters & object} options - Options for the game
  * @param {GuildMember} [options.opponent] - The opponent the user want to challenge
- * @returns {Promise<void>} Returns nothing, throws an error if you have messed something up
+ * @param {string} [options.embed.tieMessage] - The message to display when the user loses
+ * @param {string} [options.embed.timeEndMessage] - The message to display when time runs out
+ * @returns {Promise<'win' | 'tie' | 'loss'>} Returns nothing, throws an error if you have messed something up
  * @author CarelessInternet
  */
 export async function rps({
@@ -54,7 +57,6 @@ export async function rps({
 }: {
 	opponent?: GuildMember;
 	embed?: {
-		winMessage?: string;
 		tieMessage?: string;
 		timeEndMessage?: string;
 	};
@@ -120,7 +122,7 @@ class Game {
 	private reacted: RPSReacted[];
 
 	constructor(
-		private message: Message | CommandInteraction,
+		private message: Message | CommandInteraction | ContextMenuInteraction,
 		private gameEmbed: MessageEmbed,
 		private embedOptions: {
 			winMessage: string;

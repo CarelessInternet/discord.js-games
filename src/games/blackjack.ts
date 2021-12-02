@@ -2,6 +2,7 @@ import blackjackJson from '../json/blackjack.json';
 import {
 	ButtonInteraction,
 	CommandInteraction,
+	ContextMenuInteraction,
 	EmbedFieldData,
 	InteractionCollector,
 	Message,
@@ -43,7 +44,6 @@ buttons.forEach((button) => {
 /**
  * Plays a classic game of blackjack!
  * @param {GameParameters & object} options - Options for the game
- * @param {string} [options.embed.winMessage] - The message to display when the user win
  * @param {string} [options.embed.tieMessage] - The message to display when the user ties
  * @param {string} [options.embed.loseMessage] - The message to display when the user loses
  * @param {string} [options.embed.timeEndMessage] - The message to display when time runs out
@@ -55,7 +55,6 @@ export async function blackjack({
 	embed = {}
 }: {
 	embed?: {
-		winMessage?: string;
 		tieMessage?: string;
 		loseMessage?: string;
 		timeEndMessage?: string;
@@ -103,7 +102,7 @@ class Game {
 	private authorWon: 'win' | 'tie' | 'loss';
 
 	constructor(
-		private message: Message | CommandInteraction,
+		private message: Message | CommandInteraction | ContextMenuInteraction,
 		private gameEmbed: MessageEmbed,
 		private embedOptions: {
 			winMessage: string;
