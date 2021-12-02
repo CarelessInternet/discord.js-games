@@ -6,11 +6,13 @@ export interface Command {
 	execute: ({
 		client,
 		interaction,
-		cmd
+		cmd,
+		args
 	}: {
 		client: Client;
 		interaction: Message | CommandInteraction;
 		cmd: string;
+		args?: string[];
 	}) => Promise<void> | void;
 	data:
 		| Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>

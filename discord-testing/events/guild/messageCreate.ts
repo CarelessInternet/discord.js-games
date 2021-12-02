@@ -15,5 +15,5 @@ export const execute = (client: Client, message: Message) => {
 		return;
 	}
 
-	command.execute({ client, cmd, interaction: message });
+	command.execute({ client, cmd, args, interaction: message });
 };
