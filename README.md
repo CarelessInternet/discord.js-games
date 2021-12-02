@@ -17,7 +17,7 @@ A discord.js v13 module which allows you to add minigames to your bot super easi
 * Promise-based
 * Customisable
 * Easy to implement
-* TypeScript support if needed for some reason
+* TypeScript support
 
 ## Documentation
 
