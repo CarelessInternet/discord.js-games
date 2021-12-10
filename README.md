@@ -55,7 +55,7 @@ client.on('messageCreate', async message => {
   } else if (message.content === 'rps') {
     const opponent = message.mentions.members?.first();
     const result = await rps({
-      message: interaction,
+      message,
       ...(opponent instanceof GuildMember && { opponent })
     });
 
@@ -86,7 +86,7 @@ client.on('messageCreate', async message => {
   } else if (message.content === 'rps') {
     const opponent = message.mentions.members?.first();
     const result = await rps({
-      message: interaction,
+      message,
       ...(opponent instanceof GuildMember && { opponent })
     });
 
