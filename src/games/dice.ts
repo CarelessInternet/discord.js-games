@@ -45,10 +45,10 @@ export async function dice({
 
 	checkForNotReplied(message);
 
-	const [tag, avatar] = tagAndAvatar(message);
+	const [name, iconURL] = tagAndAvatar(message);
 	const gameEmbed = new MessageEmbed()
 		.setColor(embed.color)
-		.setAuthor(tag, avatar)
+		.setAuthor({ name, iconURL })
 		.setTitle(embed.title)
 		.setTimestamp()
 		.setFooter(embed.footer);

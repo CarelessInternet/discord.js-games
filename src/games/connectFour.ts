@@ -95,15 +95,15 @@ export async function connectFour({
 
 	checkForNotReplied(message);
 
-	const [tag, avatar, authorId] = tagAndAvatar(message);
+	const [name, iconURL, authorId] = tagAndAvatar(message);
 	const gameEmbed = new MessageEmbed()
 		.setColor(embed.color)
-		.setAuthor(tag, avatar)
+		.setAuthor({ name, iconURL })
 		.setTitle(embed.title)
 		.setTimestamp()
 		.setFooter(embed.footer);
 
-	checkForPermissions(message, tag, avatar);
+	checkForPermissions(message, name, iconURL);
 
 	if (opponent?.user.bot && opponent.user.id !== message.client.user?.id) {
 		message.reply({

@@ -11,8 +11,8 @@ import { inlineCode } from '@discordjs/builders';
 
 export function checkForPermissions(
 	message: Message | CommandInteraction | ContextMenuInteraction,
-	tag: string,
-	avatar: string
+	name: string,
+	iconURL: string
 ): void {
 	const { channel } = message;
 
@@ -34,7 +34,7 @@ export function checkForPermissions(
 		if (!perms?.has('ADD_REACTIONS')) {
 			const embed = new MessageEmbed()
 				.setColor('DARK_RED')
-				.setAuthor(tag, avatar)
+				.setAuthor({ name, iconURL })
 				.setTitle('Missing Permissions')
 				.setDescription(
 					`❌ I am missing the ${inlineCode(

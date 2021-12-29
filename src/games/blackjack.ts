@@ -70,15 +70,15 @@ export async function blackjack({
 
 	checkForNotReplied(message);
 
-	const [tag, avatar] = tagAndAvatar(message);
+	const [name, iconURL] = tagAndAvatar(message);
 	const gameEmbed = new MessageEmbed()
 		.setColor(embed.color)
-		.setAuthor(tag, avatar)
+		.setAuthor({ name, iconURL })
 		.setTitle(embed.title)
 		.setTimestamp()
 		.setFooter(embed.footer);
 
-	checkForPermissions(message, tag, avatar);
+	checkForPermissions(message, name, iconURL);
 
 	const game = new Game(message, gameEmbed, {
 		winMessage: embed.winMessage,
@@ -149,7 +149,7 @@ class Game {
 					this.player.push(this.drawCard);
 					this.editFields();
 
-					this.handValue('player')[1] >= 21
+					this.handValue('player')[0] >= 21
 						? this.dealersTurn(i, collector)
 						: i.update({ embeds: [this.gameEmbed] });
 				} else if (i.customId === 'stand') {
@@ -218,7 +218,7 @@ class Game {
 		else return parseInt(card);
 	}
 
-	private handValue(hand: 'player' | 'dealer'): [string, number] {
+	private handValue(hand: 'player' | 'dealer'): [number, string] {
 		let score = this[hand].reduce((acc, card) => {
 			return acc + this.cardValue(card.value);
 		}, 0);
@@ -233,13 +233,13 @@ class Game {
 			}
 		}
 
-		if (score < 21) return [score.toString(), score];
+		if (score < 21) return [score, score.toString()];
 		else if (score === 21)
 			return [
-				this.hasBlackjack(this[hand], score) ? 'Blackjack!' : '21',
-				score
+				score,
+				this.hasBlackjack(this[hand], score) ? 'Blackjack!' : '21'
 			];
-		else return ['Bust!', score];
+		else return [score, 'Bust!'];
 	}
 
 	private cardsAsString(hand: 'player' | 'dealer'): string {
@@ -274,11 +274,11 @@ class Game {
 		fields[2].value = '\u200B';
 
 		fields[3].name = 'Your Value';
-		fields[3].value = this.handValue('player')[0];
+		fields[3].value = this.handValue('player')[1];
 		fields[3].inline = true;
 
 		fields[4].name = "Dealer's Value";
-		fields[4].value = this.handValue('dealer')[0];
+		fields[4].value = this.handValue('dealer')[1];
 		fields[4].inline = true;
 
 		this.gameEmbed.setFields(fields);
@@ -302,18 +302,18 @@ class Game {
 	): void {
 		this.msg.components = [];
 
-		const [_playerScoreStr, playerScoreInt] = this.handValue('player');
+		const [playerScoreInt] = this.handValue('player');
 		const hasBeginningAce = (cards: BlackjackCard[]) =>
 			cards[0].value === 'ACE' || cards[1].value === 'ACE';
 
 		const playerHasBeginningAce = hasBeginningAce(this.player);
 
 		if (playerScoreInt <= 21) {
-			while (this.handValue('dealer')[1] < 17) {
+			while (this.handValue('dealer')[0] < 17) {
 				this.dealer.push(this.drawCard);
 			}
 
-			const [_dealerScoreStr, dealerScoreInt] = this.handValue('dealer');
+			const [dealerScoreInt] = this.handValue('dealer');
 			const dealerHasBeginningAce = hasBeginningAce(this.dealer);
 
 			if (dealerScoreInt > 21 || playerScoreInt > dealerScoreInt) {
