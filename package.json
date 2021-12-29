@@ -1,6 +1,6 @@
 {
 	"name": "discord.js-games",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"description": "A Discord.js v13 module for minigames",
 	"main": "./dist/src/index.js",
 	"types": "./dist/src/index.d.ts",
