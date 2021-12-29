@@ -1,9 +1,8 @@
 // https://github.com/aniket091/Gamecord really helped me with figuring out how to make connect 4
 
+import type { ContextMenuInteraction, GuildMember } from 'discord.js';
 import {
 	CommandInteraction,
-	ContextMenuInteraction,
-	GuildMember,
 	Message,
 	MessageActionRow,
 	MessageButton,
@@ -16,7 +15,7 @@ import {
 	checkForPermissions,
 	tagAndAvatar
 } from '../functions';
-import { Buttons, GameParameters } from '../interfaces';
+import type { Buttons, GameParameters } from '../interfaces';
 
 const buttons: Buttons[] = [
 	{
@@ -95,15 +94,15 @@ export async function connectFour({
 
 	checkForNotReplied(message);
 
-	const [tag, avatar, authorId] = tagAndAvatar(message);
+	const [name, iconURL, authorId] = tagAndAvatar(message);
 	const gameEmbed = new MessageEmbed()
 		.setColor(embed.color)
-		.setAuthor(tag, avatar)
+		.setAuthor({ name, iconURL })
 		.setTitle(embed.title)
 		.setTimestamp()
 		.setFooter(embed.footer);
 
-	checkForPermissions(message, tag, avatar);
+	checkForPermissions(message, name, iconURL);
 
 	if (opponent?.user.bot && opponent.user.id !== message.client.user?.id) {
 		message.reply({

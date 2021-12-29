@@ -1,6 +1,7 @@
 import { randomInt } from 'crypto';
-import { EmojiResolvable, MessageEmbed, GuildEmoji } from 'discord.js';
-import { GameParameters } from '../interfaces';
+import type { EmojiResolvable } from 'discord.js';
+import { MessageEmbed, GuildEmoji } from 'discord.js';
+import type { GameParameters } from '../interfaces';
 import { checkForNotReplied, tagAndAvatar } from '../functions';
 
 /**
@@ -29,10 +30,10 @@ export async function slotMachine({
 
 	checkForNotReplied(message);
 
-	const [tag, avatar] = tagAndAvatar(message);
+	const [name, iconURL] = tagAndAvatar(message);
 	const gameEmbed = new MessageEmbed()
 		.setColor(embed.color)
-		.setAuthor(tag, avatar)
+		.setAuthor({ name, iconURL })
 		.setTitle(embed.title)
 		.setTimestamp()
 		.setFooter(embed.footer);

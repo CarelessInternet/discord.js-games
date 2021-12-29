@@ -7,14 +7,14 @@ import {
 export function tagAndAvatar(
 	message: Message | CommandInteraction | ContextMenuInteraction
 ): string[] {
-	const tag =
+	const name =
 		message instanceof Message ? message.author.tag : message.user.tag;
-	const avatar =
+	const iconURL =
 		message instanceof Message
 			? message.author.displayAvatarURL({ dynamic: true })
 			: message.user.displayAvatarURL({ dynamic: true });
 
 	const id = message instanceof Message ? message.author.id : message.user.id;
 
-	return [tag, avatar, id];
+	return [name, iconURL, id];
 }

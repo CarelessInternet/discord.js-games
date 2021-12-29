@@ -1,6 +1,6 @@
 import { randomInt } from 'crypto';
+import type { CommandInteraction } from 'discord.js';
 import {
-	CommandInteraction,
 	ContextMenuInteraction,
 	EmojiResolvable,
 	GuildEmoji,
@@ -8,7 +8,7 @@ import {
 	MessageEmbed
 } from 'discord.js';
 import { checkForNotReplied, tagAndAvatar } from '../functions';
-import { GameParameters } from '../interfaces';
+import type { GameParameters } from '../interfaces';
 
 /**
  * Rolls some dice. You have to validate if the user's dice rolls are between 1-6
@@ -45,10 +45,10 @@ export async function dice({
 
 	checkForNotReplied(message);
 
-	const [tag, avatar] = tagAndAvatar(message);
+	const [name, iconURL] = tagAndAvatar(message);
 	const gameEmbed = new MessageEmbed()
 		.setColor(embed.color)
-		.setAuthor(tag, avatar)
+		.setAuthor({ name, iconURL })
 		.setTitle(embed.title)
 		.setTimestamp()
 		.setFooter(embed.footer);
