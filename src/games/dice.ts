@@ -51,7 +51,7 @@ export async function dice({
 		.setAuthor({ name, iconURL })
 		.setTitle(embed.title)
 		.setTimestamp()
-		.setFooter(embed.footer);
+		.setFooter({ text: embed.footer });
 
 	for (const emoji of diceEmojis) {
 		if (emoji instanceof GuildEmoji && !emoji.available) {

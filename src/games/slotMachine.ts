@@ -36,7 +36,7 @@ export async function slotMachine({
 		.setAuthor({ name, iconURL })
 		.setTitle(embed.title)
 		.setTimestamp()
-		.setFooter(embed.footer);
+		.setFooter({ text: embed.footer });
 
 	for (const emoji of emojis) {
 		if (emoji instanceof GuildEmoji && !emoji.available) {

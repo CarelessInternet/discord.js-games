@@ -82,7 +82,7 @@ export async function rps({
 		.setTitle(embed.title)
 		.setDescription('Click on the buttons to play')
 		.setTimestamp()
-		.setFooter(embed.footer);
+		.setFooter({ text: embed.footer });
 
 	checkForPermissions(message, name, iconURL);
 
