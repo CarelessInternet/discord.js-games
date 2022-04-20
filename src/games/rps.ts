@@ -10,7 +10,7 @@ import {
 	MessageButton,
 	MessageEmbed
 } from 'discord.js';
-import { memberNicknameMention } from '@discordjs/builders';
+import { userMention } from '@discordjs/builders';
 import type { Buttons, GameParameters, RPSReacted } from '../interfaces';
 import {
 	checkForNotReplied,
@@ -168,7 +168,7 @@ class Game {
 
 					if (this.reacted.length < 2 && this.opponentId !== this.botId) {
 						this.gameEmbed.setDescription(
-							`Waiting for ${memberNicknameMention(
+							`Waiting for ${userMention(
 								i.user.id === this.authorId ? this.opponentId : this.authorId
 							)}...`
 						);
@@ -257,21 +257,17 @@ class Game {
 
 			this.embedOptions.winMessage = this.embedOptions.winMessage.replace(
 				new RegExp('{user}', 'g'),
-				memberNicknameMention(winner)
+				userMention(winner)
 			);
 			this.embedOptions.winMessage = this.embedOptions.winMessage.replace(
 				new RegExp('{opponent}', 'g'),
-				memberNicknameMention(loser)
+				userMention(loser)
 			);
 
 			this.gameEmbed.setDescription(this.embedOptions.winMessage);
 		}
 
-		this.gameEmbed.addField(
-			'Opponent',
-			memberNicknameMention(this.opponentId),
-			true
-		);
+		this.gameEmbed.addField('Opponent', userMention(this.opponentId), true);
 		this.gameEmbed.addField(
 			'Choice',
 			buttons.filter((item) => item.id === this.reacted[0].customId)[0].label,
