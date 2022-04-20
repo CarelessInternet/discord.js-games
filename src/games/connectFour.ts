@@ -8,7 +8,7 @@ import {
 	MessageButton,
 	MessageEmbed
 } from 'discord.js';
-import { memberNicknameMention } from '@discordjs/builders';
+import { userMention } from '@discordjs/builders';
 import { randomInt } from 'crypto';
 import {
 	checkForNotReplied,
@@ -295,18 +295,18 @@ class Game {
 
 				this.embedOptions.winMessage = this.embedOptions.winMessage.replace(
 					new RegExp('{user}', 'g'),
-					memberNicknameMention(winner)
+					userMention(winner)
 				);
 				this.embedOptions.winMessage = this.embedOptions.winMessage.replace(
 					new RegExp('{opponent}', 'g'),
-					memberNicknameMention(loser)
+					userMention(loser)
 				);
 
 				this.gameEmbed.setDescription(this.embedOptions.winMessage);
 			}
 		} else {
 			this.gameEmbed.setDescription(
-				`Current player's turn: ${memberNicknameMention(turn)}`
+				`Current player's turn: ${userMention(turn)}`
 			);
 		}
 

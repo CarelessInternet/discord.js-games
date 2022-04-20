@@ -12,7 +12,7 @@ import {
 	MessageButton,
 	MessageEmbed
 } from 'discord.js';
-import { memberNicknameMention } from '@discordjs/builders';
+import { userMention } from '@discordjs/builders';
 import {
 	checkForNotReplied,
 	checkForPermissions,
@@ -346,7 +346,7 @@ class Game {
 		if (this.authorWon === 'win') {
 			this.embedOptions.winMessage = this.embedOptions.winMessage.replace(
 				new RegExp('{user}', 'g'),
-				memberNicknameMention(this.authorId)
+				userMention(this.authorId)
 			);
 			this.gameEmbed.setDescription(this.embedOptions.winMessage);
 		} else if (this.authorWon === 'tie') {
@@ -354,7 +354,7 @@ class Game {
 		} else {
 			this.embedOptions.loseMessage = this.embedOptions.loseMessage.replace(
 				new RegExp('{user}', 'g'),
-				memberNicknameMention(this.authorId)
+				userMention(this.authorId)
 			);
 			this.gameEmbed.setDescription(this.embedOptions.loseMessage);
 		}
